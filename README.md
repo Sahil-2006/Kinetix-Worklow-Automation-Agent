@@ -1,4 +1,4 @@
-# Kinetix — AI Workflow Automation Agent
+<img width="1918" height="1092" alt="image" src="https://github.com/user-attachments/assets/0974f272-150a-4051-a983-a2deaf1dc5ed" /># Kinetix — AI Workflow Automation Agent
 
 > 🚀 **Track 5 Hackathon Entry** — Enterprise-grade workflow automation powered by LLM reasoning.
 
@@ -216,6 +216,10 @@ Kinetix-Worklow-Automation-Agent/
 2. **Calendar**: `"Schedule a team meeting tomorrow at 2pm"`
 3. **Multi-step**: `"Summarize daily-report.txt and email to ops@example.com"`
 4. **Search**: `"Search for workflow automation best practices"`
+<img width="1915" height="1087" alt="image" src="https://github.com/user-attachments/assets/30d401fb-6e65-4b88-9f3f-02d9eaf68003" />
+<img width="1918" height="1086" alt="image" src="https://github.com/user-attachments/assets/cc277fdc-291d-487f-a318-1725eb3e49bd" />
+<img width="1910" height="1073" alt="image" src="https://github.com/user-attachments/assets/2a03e128-5332-4df9-84b5-ed571d001b63" />
+
 
 ---
 
