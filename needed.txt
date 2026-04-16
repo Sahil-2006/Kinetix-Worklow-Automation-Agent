@@ -1,0 +1,10 @@
+*Mandatory:*
+ * Readme.md (Problem Statement, Solution, Tech Stack, How to run, SS)
+ * model view controller
+ * Rest API Structure should be used correctly
+ * Error Logging
+ * PII not exposed in frontend API calls (emails visible in tool results) - need PII scrubbing
+ * Encryption of PII in DB (plaintext emails in email_outbox, calendar_events) - need Fernet encryption
+*Advantage:*
+ * Clean Project Structure
+ * singleton pattern should be observed for DB connection
