@@ -1,4 +1,4 @@
-<img width="1918" height="1092" alt="image" src="https://github.com/user-attachments/assets/0974f272-150a-4051-a983-a2deaf1dc5ed" /># Kinetix — AI Workflow Automation Agent
+# Kinetix — AI Workflow Automation Agent
 
 > 🚀 **Track 5 Hackathon Entry** — Enterprise-grade workflow automation powered by LLM reasoning.
 
