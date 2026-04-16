@@ -1,8 +1,9 @@
-from flask import Flask, redirect, request, session, url_for
+from flask import Flask, redirect, request, session, url_for, json
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 import os
 from datetime import datetime, timedelta
+import requests
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
@@ -11,6 +12,26 @@ app.secret_key = "your_secret_key_here"
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
+
+OPENROUTER_API_KEY = "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"
+
+url = "https://openrouter.ai/api/v1/chat/completions"
+
+def call_openrouter(prompt):
+      response = requests.post(
+        url,
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "model": "openai/gpt-4o-mini",  # can swap models
+            "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        }
+      )
+      return response.json()["choices"][0]["message"]["content"]
 
 # Initialize OAuth Flow
 flow = Flow.from_client_secrets_file(
@@ -69,20 +90,67 @@ def callback():
 
     return redirect(url_for("home"))
 
+def parse_with_ai(text):
+  prompt = f"""
+Return STRICT JSON ONLY.
+NOTE CURRENT DATE AND TIME IS {datetime.now().isoformat()}
+Rules:
+- start MUST be full ISO datetime with timezone
+- end MUST be strictly after start
+- If duration mentioned, compute correctly
+- If no duration, assume 1 hour
+- NEVER return same start and end
 
-@app.route("/create_event")
+Format:
+
+  "summary": "...",
+  "start": "YYYY-MM-DDTHH:MM:SS+05:30",
+  "end": "YYYY-MM-DDTHH:MM:SS+05:30"
+
+
+Rules:
+- Output ONLY valid JSON
+- No markdown
+- No backticks
+- No explanation
+- Default duration = 1 hour if not specified
+
+  User input:
+  {text}
+
+  Return array : [summary, start, end].
+  """
+  response = call_openrouter(prompt)
+  return json.loads(response)
+
+@app.route("/create_event", methods=["GET", "POST"])
 def create_event():
     if "credentials" not in session:
         return redirect(url_for("login"))
+    if request.method == "GET":
+        return """
+<form method="POST" action="/create_event">
+    <input type="text" name="text" placeholder="Enter event details">
+    <button type="submit">Create Event</button>
+</form>
+"""
+
+    user_text = request.form.get("text")
+    data = parse_with_ai(user_text)
+    title = data["summary"]
+    start_time = datetime.fromisoformat(data["start"])
+    end_time = datetime.fromisoformat(data["end"])
+    if not start_time or not end_time:
+      end_time = start_time + timedelta(hours=1)
+
+    if end_time <= start_time:
+      end_time = start_time + timedelta(hours=1)
 
     creds = dict_to_credentials(session["credentials"])
     service = build("calendar", "v3", credentials=creds)
 
-    start_time = datetime.now() + timedelta(hours=1)
-    end_time = start_time + timedelta(hours=1)
-
     event = {
-        "summary": "AI Agent Meeting",
+        "summary": title,
         "start": {
             "dateTime": start_time.isoformat(),
             "timeZone": "Asia/Kolkata"
@@ -136,4 +204,5 @@ def logout():
 
 
 if __name__ == "__main__":
+    
     app.run(debug=True)

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import requests
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 url = "https://openrouter.ai/api/v1/chat/completions"
 
