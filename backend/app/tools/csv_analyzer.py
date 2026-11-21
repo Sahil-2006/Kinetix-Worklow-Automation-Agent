@@ -1,7 +1,12 @@
 import csv
-from pathlib import Path
 from typing import Any, Dict, List
 
+from .file_access import (
+    MAX_CSV_FILE_BYTES,
+    display_data_path,
+    ensure_file_size,
+    resolve_data_path,
+)
 from .base import Tool, ToolContext
 
 
@@ -16,7 +21,7 @@ class CsvAnalyzerTool(Tool):
         "properties": {
             "path": {
                 "type": "string",
-                "description": "Path to the CSV file to analyze.",
+                "description": "CSV file path inside the configured data folder. Relative paths are recommended.",
             },
             "top_n": {
                 "type": "integer",
@@ -33,11 +38,19 @@ class CsvAnalyzerTool(Tool):
     }
 
     def execute(self, params: Dict[str, Any], context: ToolContext) -> Dict[str, Any]:
-        path = Path(params["path"]).expanduser()
-        if not path.exists():
-            raise FileNotFoundError(f"CSV not found: {path}")
-        top_n = int(params.get("top_n", 5))
-        max_rows = int(params.get("max_rows", 5000))
+        path = resolve_data_path(params.get("path"))
+        if not path.is_file():
+            raise FileNotFoundError("CSV not found in the configured data folder.")
+        ensure_file_size(path, MAX_CSV_FILE_BYTES)
+        try:
+            top_n = int(params.get("top_n", 5))
+            max_rows = int(params.get("max_rows", 5000))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("top_n and max_rows must be integers.") from exc
+        if not 1 <= top_n <= 20:
+            raise ValueError("top_n must be between 1 and 20.")
+        if not 1 <= max_rows <= 50_000:
+            raise ValueError("max_rows must be between 1 and 50000.")
 
         counts: Dict[str, Dict[str, int]] = {}
         numeric_values: Dict[str, List[float]] = {}
@@ -103,7 +116,7 @@ class CsvAnalyzerTool(Tool):
             columns[col] = stats
 
         return {
-            "path": str(path),
+            "path": display_data_path(path),
             "rows_analyzed": rows,
             "column_count": len(columns),
             "columns": columns,

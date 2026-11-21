@@ -12,7 +12,7 @@ import logging
 from typing import Any, Dict, List
 
 from .base import Tool, ToolContext
-from ..core.config import REDIS_URL
+from ..core.config import ENABLE_LIVE_ACTIONS, REDIS_URL
 from ..queue import enqueue_job
 
 logger = logging.getLogger(__name__)
@@ -42,8 +42,8 @@ def _build_service():
 class CalendarScheduleTool(Tool):
     name = "calendar_schedule"
     description = (
-        "Schedule a meeting on Google Calendar. Creates a real calendar event "
-        "when credentials are configured, otherwise uses a local mock."
+        "Create a simulated calendar event by default. Schedules externally only "
+        "when ENABLE_LIVE_ACTIONS=true and Google Calendar credentials are configured."
     )
     parameters_schema = {
         "type": "object",
@@ -95,7 +95,7 @@ class CalendarScheduleTool(Tool):
 
         start_time = f"{date_value}T{time_value}:00"
 
-        if REDIS_URL:
+        if ENABLE_LIVE_ACTIONS and REDIS_URL:
             job = enqueue_job(
                 "app.workers.tasks.schedule_calendar_task",
                 context.run_id,
@@ -114,7 +114,7 @@ class CalendarScheduleTool(Tool):
                 }
 
         # Try real Google Calendar API
-        service = _build_service()
+        service = _build_service() if ENABLE_LIVE_ACTIONS else None
         if service is not None:
             return self._create_real_event(
                 service, title, start_time, duration, attendees, description

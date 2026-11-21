@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 class EmailSendTool(Tool):
     name = "email_send"
     description = (
-        "Send an email to one or more recipients. Uses SendGrid when configured, "
-        "otherwise stores locally in mock mode."
+        "Queue a simulated email by default. Sends externally only when "
+        "ENABLE_LIVE_ACTIONS=true and SendGrid credentials are configured."
     )
     parameters_schema = {
         "type": "object",
@@ -47,10 +47,10 @@ class EmailSendTool(Tool):
         subject = params.get("subject", "Automated message")
         body = params.get("body", "")
 
-        from ..core.config import REDIS_URL, SENDGRID_API_KEY
+        from ..core.config import ENABLE_LIVE_ACTIONS, REDIS_URL, SENDGRID_API_KEY
         from ..queue import enqueue_job
 
-        if REDIS_URL:
+        if ENABLE_LIVE_ACTIONS and REDIS_URL:
             job = enqueue_job(
                 "app.workers.tasks.send_email_task",
                 context.run_id,
@@ -65,7 +65,7 @@ class EmailSendTool(Tool):
                     "mode": "rq",
                 }
 
-        if SENDGRID_API_KEY:
+        if ENABLE_LIVE_ACTIONS and SENDGRID_API_KEY:
             return self._send_real(recipients, subject, body, context)
 
         return self._send_mock(recipients, subject, body, context)

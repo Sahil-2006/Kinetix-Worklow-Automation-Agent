@@ -2,7 +2,7 @@
 
 > 🚀 **Track 5 Hackathon Entry** — Enterprise-grade workflow automation powered by LLM reasoning.
 
-Turn natural language into real-world actions with full execution traceability.
+Turn natural-language requests into traceable workflows, with external actions simulated by default.
 
 ![Architecture](docs/architecture-flow.png)
 
@@ -47,10 +47,13 @@ All steps are streamed to the frontend in real time via **Server-Sent Events (SS
 ```
 
 ### Security Model
-- LLM receives **tool schemas only** — never API keys
+- LLM receives the user prompt and workflow data needed to reason; API keys stay server-side
 - All tool execution happens on the **backend**
 - API keys are loaded from environment variables
-- PII is encrypted at rest (Fernet) and redacted in frontend responses
+- Email bodies and calendar attendee lists in action records are encrypted at rest; account email addresses remain plaintext in PostgreSQL
+- File tools are restricted to the configured data folder, including protection against path traversal and escaping symlinks
+- Prompts and selected file contents are sent to OpenRouter for reasoning; do not submit sensitive data without reviewing provider terms
+- Real email and calendar actions stay disabled unless ENABLE_LIVE_ACTIONS=true
 
 ---
 
@@ -64,8 +67,8 @@ All steps are streamed to the frontend in real time via **Server-Sent Events (SS
 | Streaming | Server-Sent Events (SSE) |
 | Database | Supabase (Postgres) |
 | Queue | Redis + RQ |
-| Email | SendGrid (with mock fallback) |
-| Calendar | Google Calendar API (with mock fallback) |
+| Email | SendGrid (simulated by default; live actions are opt-in) |
+| Calendar | Google Calendar API (simulated by default; live actions are opt-in) |
 
 ---
 
@@ -77,6 +80,7 @@ All steps are streamed to the frontend in real time via **Server-Sent Events (SS
 cd backend
 cp .env.example .env
 # Edit .env and add OPENROUTER_API_KEY, DATABASE_URL, and PII_ENCRYPTION_KEY
+# Generate a Fernet key with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
 pip install -r requirements.txt
 uvicorn app.main:app --reload
@@ -91,6 +95,16 @@ npm run dev
 ```
 
 Open **http://localhost:5173** and start chatting!
+
+The included example data is under backend/data. Relative paths entered into
+file or CSV tools are resolved from the configured AGENT_DATA_DIR. By default,
+tools can read only text files up to 2 MiB, analyze CSV files up to 10 MiB, and
+write files up to 100 KiB inside that folder.
+
+Email and calendar actions are simulated even if provider credentials exist.
+To enable external actions intentionally, set ENABLE_LIVE_ACTIONS=true and
+configure the matching provider credentials. Review the workflow before
+enabling this on any shared or deployed environment.
 
 ### 3. Background Worker (optional)
 
@@ -222,6 +236,15 @@ Kinetix-Worklow-Automation-Agent/
 
 
 ---
+
+## Scope and launch status
+
+Kinetix is a single-workspace local demo, not a production multi-tenant service.
+Production mode requires a JWT secret with at least 32 characters and a valid
+Fernet key. Before public deployment, add user-data isolation, rate limiting,
+reviewed database policies, provider approvals, and confirmation for external
+actions. Prompts and selected file contents are sent to OpenRouter for
+reasoning, so review provider terms before using sensitive information.
 
 ## License
 

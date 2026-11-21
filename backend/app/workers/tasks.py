@@ -4,7 +4,12 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
-from ..core.config import SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, GOOGLE_CALENDAR_ID
+from ..core.config import (
+    ENABLE_LIVE_ACTIONS,
+    GOOGLE_CALENDAR_ID,
+    SENDGRID_API_KEY,
+    SENDGRID_FROM_EMAIL,
+)
 from ..storage.db import TraceStore
 from ..tools.calendar import _build_service
 
@@ -21,7 +26,7 @@ def send_email_task(
     status = "queued"
     sendgrid_status_code = None
 
-    if SENDGRID_API_KEY:
+    if ENABLE_LIVE_ACTIONS and SENDGRID_API_KEY:
         try:
             from sendgrid import SendGridAPIClient
             from sendgrid.helpers.mail import Mail
@@ -68,7 +73,7 @@ def schedule_calendar_task(
     location: str = "",
 ) -> Dict[str, Any]:
     store = TraceStore()
-    service = _build_service()
+    service = _build_service() if ENABLE_LIVE_ACTIONS else None
     status = "scheduled"
     mode = "mock"
     link = ""

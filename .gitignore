@@ -9,6 +9,8 @@ __pycache__/
 venv/
 ENV/
 .env.*
+!.env.example
+!**/.env.example
 pip-wheel-metadata/
 .pytest_cache/
 .mypy_cache/
